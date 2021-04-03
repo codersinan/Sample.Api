@@ -16,7 +16,7 @@ namespace Sample.Api.Requests
     {
         public AddProductValidator()
         {
-            RuleFor(r => r.Name).NotNull().NotEmpty();
+            RuleFor(r => r.Name).NotNull().NotEmpty().MinimumLength(3);
         }
     }
 }

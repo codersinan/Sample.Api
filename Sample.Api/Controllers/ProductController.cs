@@ -1,9 +1,14 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Sample.Api.Entities;
 using Sample.Api.Persistence;
 using Sample.Api.Requests;
@@ -55,7 +60,7 @@ namespace Sample.Api.Controllers
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, UpdateProductRequest request)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateProductRequest request)
         {
             var exists = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
             if (exists == null)
@@ -69,27 +74,34 @@ namespace Sample.Api.Controllers
             await _context.SaveChangesAsync();
             return AcceptedAtAction(nameof(Get), new {Id = exists.Id}, _mapper.Map<ProductResponse>(exists));
         }
-        
+
         [HttpPatch("{id}")]
-        public async Task<IActionResult> Patch(int id, [FromBody] JsonPatchDocument<PatchProductRequest> patchDocument)
+        public async Task<IActionResult> Patch(int id, [FromBody] JsonPatchDocument<PatchProductRequest> patchDocument,[FromServices] IOptions<ApiBehaviorOptions> apiBehaviorOptions)
         {
             var exists = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
             if (exists == null)
             {
                 return NotFound();
             }
-            
-            var productPatchDocument = _mapper.Map<JsonPatchDocument<Product>>(patchDocument);
-            productPatchDocument.ApplyTo(exists,ModelState);
 
-            if (!ModelState.IsValid)
+            var productPatchDocument = _mapper.Map<JsonPatchDocument<Product>>(patchDocument);
+            productPatchDocument.ApplyTo(exists, ModelState);
+
+            var productValidator = new ProductValidator();
+            var validationResult = await productValidator.ValidateAsync(exists);
+
+
+            if (!ModelState.IsValid || !validationResult.IsValid)
             {
-                return BadRequest(ModelState);
+                validationResult.AddToModelState(ModelState,"");
+                return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
+                // return BadRequest(ModelState);
             }
+
             _context.Products.Update(exists);
 
             await _context.SaveChangesAsync();
-            
+
             return AcceptedAtAction(nameof(Get), new {Id = exists.Id}, _mapper.Map<ProductResponse>(exists));
         }
 

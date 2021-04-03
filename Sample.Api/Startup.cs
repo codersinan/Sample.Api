@@ -34,7 +34,12 @@ namespace Sample.Api
         {
             var keepAliveConnection = new SqliteConnection(Configuration.GetConnectionString("DefaultConnection"));
             keepAliveConnection.Open();
-            
+
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy => { policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin(); });
+            });
+
             services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlite(keepAliveConnection)
             );
@@ -48,7 +53,10 @@ namespace Sample.Api
                     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
                     options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
                 })
-                .AddFluentValidation();
+                .AddFluentValidation(options =>
+                {
+                    options.RegisterValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+                });
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
             services.AddSwaggerGen(c =>
             {
@@ -66,7 +74,8 @@ namespace Sample.Api
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Sample.Api v1"));
             }
 
-            app.UseHttpsRedirection();
+            app.UseCors();
+            // app.UseHttpsRedirection();
 
             app.UseRouting();
 
