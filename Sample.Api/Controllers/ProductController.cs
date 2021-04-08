@@ -1,12 +1,9 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
-using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Sample.Api.Entities;
@@ -32,14 +29,18 @@ namespace Sample.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var products = await _context.Products.ToListAsync();
+            var products = await _context.Products
+                .Include(x => x.Tags)
+                .ToListAsync();
             return Ok(_mapper.Map<IList<ProductResponse>>(products));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
+            var product = await _context.Products
+                .Include(x => x.Tags)
+                .FirstOrDefaultAsync(x => x.Id == id);
             if (product == null)
             {
                 return NotFound();
@@ -76,9 +77,10 @@ namespace Sample.Api.Controllers
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> Patch(int id, [FromBody] JsonPatchDocument<PatchProductRequest> patchDocument,[FromServices] IOptions<ApiBehaviorOptions> apiBehaviorOptions)
+        public async Task<IActionResult> Patch(int id, [FromBody] JsonPatchDocument<PatchProductRequest> patchDocument,
+            [FromServices] IOptions<ApiBehaviorOptions> apiBehaviorOptions)
         {
-            var exists = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
+            var exists = await _context.Products.Include(x=>x.Tags).FirstOrDefaultAsync(x => x.Id == id);
             if (exists == null)
             {
                 return NotFound();
@@ -93,7 +95,7 @@ namespace Sample.Api.Controllers
 
             if (!ModelState.IsValid || !validationResult.IsValid)
             {
-                validationResult.AddToModelState(ModelState,"");
+                validationResult.AddToModelState(ModelState, "");
                 return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
                 // return BadRequest(ModelState);
             }

@@ -12,7 +12,7 @@ namespace Sample.Api.Mapping
             CreateMap<AddProductRequest, Product>();
             CreateMap<Product, ProductResponse>();
 
-            CreateMap<UpdateProductRequest,Product >();
+            CreateMap<UpdateProductRequest, Product>();
         }
     }
 }

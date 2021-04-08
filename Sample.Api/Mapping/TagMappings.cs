@@ -4,7 +4,7 @@ using Sample.Api.Responses;
 
 namespace Sample.Api.Mapping
 {
-    public class TagMappings:Profile
+    public class TagMappings : Profile
     {
         public TagMappings()
         {
