@@ -1,8 +1,6 @@
-using Sample.Api.Commons;
-
 namespace Sample.Api.Entities
 {
-    public class Tag:Auditable
+    public class Tag
     {
         public int Id { get; set; }
         public string Name { get; set; }

@@ -8,7 +8,7 @@ namespace Sample.Api.Mapping
     {
         public TagMappings()
         {
-            CreateMap<Tag, TagResponse>();
+            CreateMap<Tag, TagResponse>().ReverseMap();
         }
     }
 }

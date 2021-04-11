@@ -95,7 +95,11 @@ namespace Sample.Api.Controllers
 
             if (!ModelState.IsValid || !validationResult.IsValid)
             {
-                validationResult.AddToModelState(ModelState, "");
+                if (!validationResult.IsValid)
+                {
+                    validationResult.AddToModelState(ModelState, "");    
+                }
+                await _context.DisposeAsync();
                 return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
                 // return BadRequest(ModelState);
             }
